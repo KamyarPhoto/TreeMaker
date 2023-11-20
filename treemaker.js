@@ -206,8 +206,9 @@ console.log(root);
     }
   });
 
-  function deleteNode() {
+  function deleteNode(d) {
     if (selectedNode.data) {
+      console.log(selectedNode);
       console.log(selectedNode.data);
       console.log(selectedNode.data.parent);
       if (selectedNode.data.parent) {
@@ -219,10 +220,22 @@ console.log(root);
         console.log(selectedNode.data.parent.children);
         console.log(index);
         if (index > -1) {
+	if(parentNode._groups[0][0].children.length > 1){
 	console.log(selectedNode.data);
+	//selectedNode = { data: d, circle: d3.select(event.currentTarget.parent).select('circle') };
         parentNode._groups[0][0].children.splice(index, 1);
+	//selectedNode.data.children.splice(index, 1);
 	console.log(selectedNode.data);
         update(selectedNode.data.parent);
+} else {
+	selectedNode = { data: selectedNode.data.parent, circle: d3.select(selectedNode.data.parent) };
+	console.log(selectedNode);
+	selectedNode.data.children = null;
+	selectedNode.data._children = null;
+	selectedNode.data.data.children = null;
+	selectedNode.data.data._children = null;
+	update(selectedNode.data.data);
+}
 //        root = d3.hierarchy(root);
 
     // Recompute the positions of the nodes
@@ -230,10 +243,12 @@ console.log(root);
 //        root = d3.hierarchy(root);
           selectedNode = null;
           document.getElementById('deleteButton').disabled = true; // Disable the delete button after deletion
-	console.log("weiners!");
+	console.log("testing!");
 	saveTree();
         loadTree();
-        }
+        } else {
+	console.log("no Parents");
+	}
       }
     }
 console.log('deleted');
@@ -269,6 +284,29 @@ function loadTree() {
     console.error('Failed to load the tree:', error);
   }
 }
+
+  function renameNode() {
+    const name = document.getElementById('nodeName').value;
+    console.log(name)
+    if (selectedNode && name) {
+	console.log("running rename");
+      selectedNode.data.data.name = name;
+    document.getElementById('nodeName').value = '';
+    document.getElementById('nodeName').focus();
+    document.getElementById('nodeName').select();
+console.log(selectedNode.data);
+console.log(root);
+
+    root = d3.hierarchy(root.data);
+
+    // Recompute the positions of the nodes
+    tree(root);
+      update(selectedNode.data);
+     console.log(selectedNode.data);
+	saveTree();
+//        loadTree();
+    }
+  }
 
 // Call loadTree() when initializing the visualization to load any saved state
 
