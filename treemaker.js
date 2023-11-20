@@ -19,8 +19,6 @@
   update(root);
 
   function update(source) {
-    console.log(root);
-//    console.log('1 ' + tree(root));
     const treeData = tree(root);
     const nodes = treeData.descendants(),
           links = treeData.descendants().slice(1);
@@ -62,7 +60,11 @@
     nodeUpdate.transition()
       .duration(500)
       .attr("transform", function(d) { 
+	if(localStorage.getItem('treeOrientation') == 'landscape'){
           return "translate(" + d.y + "," + d.x + ")";
+	} else if (localStorage.getItem('treeOrientation') == 'portrait'){
+	  return "translate(" + d.x + "," + d.y + ")";
+	}
        });
 
     nodeUpdate.select('circle.node')
@@ -121,10 +123,17 @@
 
     // Creates a curved (diagonal) path from parent to the child nodes
     function diagonal(s, d) {
+	if(localStorage.getItem('treeOrientation') == 'landscape') {
       path = `M ${s.y} ${s.x}
               C ${(s.y + d.y) / 2} ${s.x},
                 ${(s.y + d.y) / 2} ${d.x},
                 ${d.y} ${d.x}`;
+	} else if (localStorage.getItem('treeOrientation') == 'portrait') {
+      path = `M ${s.x} ${s.y}
+              C ${(s.x + d.x) / 2} ${s.y},
+                ${(s.x + d.x) / 2} ${d.y},
+                ${d.x} ${d.y}`;
+	}
 
       return path;
     }
@@ -137,7 +146,6 @@
   selectedNode = { data: d, circle: d3.select(event.currentTarget).select('circle') };
   selectedNode.circle.style('stroke', 'black').style('stroke-width', '3px');
   document.getElementById('deleteButton').disabled = false; // Enable the delete button
-  console.log("Node clicked:", d);
 }
 
 
@@ -163,9 +171,6 @@ function serializeTree(node) {
   return nodeCopy;
 }
 
-// Use this function to serialize the root of the tree before saving
-//let serializableTree = serializeTree(root);
-//let jsonString = JSON.stringify(serializableTree);
 
 // Now you can save jsonString to a file or elsewhere
 
@@ -173,30 +178,23 @@ function serializeTree(node) {
 
   function addChild() {
     const name = document.getElementById('nodeName').value;
-    console.log(name)
     if (selectedNode && name) {
      console.log(selectedNode + ' is ' + name);
       if (!selectedNode.data.data.children) {
-	console.log('running selectedNodeDataChildren if Statement');
         selectedNode.data.data.children = [];
         selectedNode.data.data._children = null;
       }
-      console.log('made it to the push statement');
       selectedNode.data.data.children.push({name: name, children: []});
     document.getElementById('nodeName').value = '';
     document.getElementById('nodeName').focus();
     document.getElementById('nodeName').select();
-console.log(selectedNode.data);
-console.log(root);
 
     root = d3.hierarchy(root.data);
 
     // Recompute the positions of the nodes
     tree(root);
       update(selectedNode.data);
-     console.log(selectedNode.data);
 	saveTree();
-//        loadTree();
     }
   }
 
@@ -208,39 +206,25 @@ console.log(root);
 
   function deleteNode(d) {
     if (selectedNode.data) {
-      console.log(selectedNode);
-      console.log(selectedNode.data);
-      console.log(selectedNode.data.parent);
       if (selectedNode.data.parent) {
 	let parentNode = d3.select(selectedNode.data.parent);
-	console.log(parentNode);
         const index = parentNode._groups[0][0].children.indexOf(selectedNode.data);
-        console.log(selectedNode.data.parent.children);
-        console.log(selectedNode.data.data);
-        console.log(selectedNode.data.parent.children);
-        console.log(index);
         if (index > -1) {
 	if(parentNode._groups[0][0].children.length > 1){
 	console.log(selectedNode.data);
-	//selectedNode = { data: d, circle: d3.select(event.currentTarget.parent).select('circle') };
         parentNode._groups[0][0].children.splice(index, 1);
-	//selectedNode.data.children.splice(index, 1);
-	console.log(selectedNode.data);
         update(selectedNode.data.parent);
 } else {
 	selectedNode = { data: selectedNode.data.parent, circle: d3.select(selectedNode.data.parent) };
-	console.log(selectedNode);
 	selectedNode.data.children = null;
 	selectedNode.data._children = null;
 	selectedNode.data.data.children = null;
 	selectedNode.data.data._children = null;
 	update(selectedNode.data.data);
 }
-//        root = d3.hierarchy(root);
 
     // Recompute the positions of the nodes
         update(root);
-//        root = d3.hierarchy(root);
           selectedNode = null;
           document.getElementById('deleteButton').disabled = true; // Disable the delete button after deletion
 	console.log("testing!");
@@ -251,7 +235,6 @@ console.log(root);
 	}
       }
     }
-console.log('deleted');
   }
 function saveTree() {
   try {
@@ -259,9 +242,10 @@ function saveTree() {
     const treeData = serialized; // assuming root.data is the full data object for the tree
     const treeJson = JSON.stringify(treeData);
     localStorage.setItem('savedTree', treeJson);
-    console.log('Tree saved successfully!');
+	showToast("Tree Saved Successfully");
   } catch (error) {
     console.error('Failed to save the tree:', error);
+	showToast("Error: Tree Couldnt Save");
   }
 }
 
@@ -279,9 +263,11 @@ function loadTree() {
       console.log('Tree loaded successfully!');
     } else {
       console.log('No saved tree to load.');
+	showToast("Tree Loaded Successfully");
     }
   } catch (error) {
     console.error('Failed to load the tree:', error);
+	showToast("Loser");
   }
 }
 
@@ -294,8 +280,6 @@ function loadTree() {
     document.getElementById('nodeName').value = '';
     document.getElementById('nodeName').focus();
     document.getElementById('nodeName').select();
-console.log(selectedNode.data);
-console.log(root);
 
     root = d3.hierarchy(root.data);
 
@@ -305,9 +289,84 @@ console.log(root);
      console.log(selectedNode.data);
 	saveTree();
 //        loadTree();
+	showToast("Node Renamed to " + name);
     }
   }
 
+function showToast(message, duration = 2000) {
+  const toast = document.createElement('div');
+  toast.classList.add('toast');
+  toast.textContent = message;
+  document.getElementById('toast-container').appendChild(toast);
+  // Animation for sliding in
+  setTimeout(() => {
+    toast.style.opacity = 1;
+    toast.style.transform = 'translateX(0)';
+  }, 100);
+
+  // Remove the toast after 'duration'
+  setTimeout(() => {
+    toast.style.opacity = 0;
+    toast.style.transform = 'translateX(100%)';
+    toast.addEventListener('transitionend', () => toast.remove());
+  }, duration);
+}
+
+document.getElementById('orientationToggle').addEventListener('change', function() {
+  let isLandscape = this.checked; // true for landscape, false for portrait
+  localStorage.setItem('treeOrientation', isLandscape ? 'landscape' : 'portrait');
+ // updateTreeOrientation(isLandscape);
+});
+/*
+function updateTreeOrientation(isLandscape) {
+  // Your code to update the tree orientation goes here
+  // For example, call a function that re-renders the tree in the new orientation
+  renderTree(isLandscape ? 'landscape' : 'portrait');
+}*/
+
+// On page load, check the stored preference and set the toggle state
+document.addEventListener('DOMContentLoaded', (event) => {
+  let storedOrientation = localStorage.getItem('treeOrientation');
+  let isLandscape = storedOrientation === 'landscape';
+  document.getElementById('orientationToggle').checked = isLandscape;
+//  updateTreeOrientation(isLandscape);
+});
+
+document.getElementById('saveTreeToFile').addEventListener('click', function() {
+  const treeData = localStorage.getItem('savedTree');
+  if (treeData) {
+    const blob = new Blob([treeData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tree.json';
+    document.body.appendChild(a); // Append to body temporarily
+    a.click();
+    document.body.removeChild(a); // Remove after download
+    URL.revokeObjectURL(url);
+  } else {
+    alert('No tree data found in localStorage.');
+  }
+});
+
+document.getElementById('loadTreeFromFile').addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  if (file && file.type === "application/json") {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const treeData = e.target.result;
+      localStorage.setItem('savedTree', treeData);
+      // Optionally, you can immediately load the tree after uploading
+       loadTree(); // Assuming loadTree is your function to render the tree from localStorage
+    };
+    reader.readAsText(file);
+ 
+  } else {
+    alert('Please upload a valid JSON file.');
+  }
+});
+
+
+
 // Call loadTree() when initializing the visualization to load any saved state
 
-console.log('loaded!');
