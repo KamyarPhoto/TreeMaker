@@ -317,12 +317,7 @@ document.getElementById('orientationToggle').addEventListener('change', function
   localStorage.setItem('treeOrientation', isLandscape ? 'landscape' : 'portrait');
  // updateTreeOrientation(isLandscape);
 });
-/*
-function updateTreeOrientation(isLandscape) {
-  // Your code to update the tree orientation goes here
-  // For example, call a function that re-renders the tree in the new orientation
-  renderTree(isLandscape ? 'landscape' : 'portrait');
-}*/
+
 
 // On page load, check the stored preference and set the toggle state
 document.addEventListener('DOMContentLoaded', (event) => {
